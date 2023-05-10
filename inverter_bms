@@ -1,0 +1,320 @@
+substitutions:
+  name: ioi
+  inverter_name: Inverter
+  bms_name: jk-bms
+  friendly_name: Home Battery System
+  device_description: "Monitor and control a JK-BMS via bluetooth and Axpert Inverter via RS232"
+  external_components_source: github://syssi/esphome-jk-bms@main
+  mac_address: C8:47:8C:E9:22:74
+  # Defaults to "JK02". Please use "JK04" if you have some old JK-BMS version (f.e. JK-B2A16S hw 3.0, sw. 3.3.0)
+  protocol_version: JK02
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  comment: ${device_description}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    version: latest
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: ""
+
+ota:
+  password: ""
+
+external_components:
+  - source: ${external_components_source}
+    refresh: 0s
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+mqtt:
+  broker: 192.168.1.1
+
+uart:
+  - id: uart0
+    baud_rate: 2400
+    tx_pin: GPIO1
+    rx_pin: GPIO3
+
+# Enable logging
+logger:
+  baud_rate: 0
+#  level: INFO
+
+pipsolar:
+  uart_id: uart0
+  id: inverter0
+
+esp32_ble_tracker:
+
+ble_client:
+  - mac_address: ${mac_address}
+    id: client0
+
+jk_bms_ble:
+  - ble_client_id: client0
+    protocol_version: ${protocol_version}
+    throttle: 5s
+    id: bms0
+
+binary_sensor:
+  - platform: jk_bms_ble
+    balancing:
+      name: "${bms_name} balancing"
+    charging:
+      name: "${bms_name} charging"
+    discharging:
+      name: "${bms_name} discharging"
+  - platform: pipsolar
+    pipsolar_id: inverter0
+    load_status:
+      name: "${inverter_name} load_status"
+    charging_status:
+      name: "${inverter_name} charging_status"
+    scc_charging_status:
+      name: "${inverter_name} scc_charging_status"
+    ac_charging_status:
+      name: "${inverter_name} ac_charging_status"
+    charging_to_floating_mode:
+      name: "${inverter_name} charging_to_floating_mode"
+    switch_on:
+      name: "${inverter_name} switch_on"
+
+
+
+button:
+  - platform: jk_bms_ble
+    retrieve_settings:
+      name: "${bms_name} retrieve settings"
+    retrieve_device_info:
+      name: "${bms_name} retrieve device info"
+
+number:
+  - platform: jk_bms_ble
+    jk_bms_ble_id: bms0
+    balance_trigger_voltage:
+      name: "${bms_name} balance trigger voltage"
+#    cell_count:
+#      name: "${bms_name} cell count"
+#    total_battery_capacity:
+#      name: "${bms_name} total battery capacity"
+    cell_voltage_overvoltage_protection:
+      name: "${bms_name} cell voltage overvoltage protection"
+    cell_voltage_overvoltage_recovery:
+      name: "${bms_name} cell voltage overvoltage recovery"
+    cell_voltage_undervoltage_protection:
+      name: "${bms_name} cell voltage undervoltage protection"
+    cell_voltage_undervoltage_recovery:
+      name: "${bms_name} cell voltage undervoltage recovery"
+    balance_starting_voltage:
+      name: "${bms_name} balance starting voltage"
+#    voltage_calibration:
+#      name: "${bms_name} voltage calibration"
+#    current_calibration:
+#      name: "${bms_name} current calibration"
+    power_off_voltage:
+      name: "${bms_name} power off voltage"
+#    max_balance_current:
+#      name: "${bms_name} max balance current"
+    max_charge_current:
+      name: "${bms_name} max charge current"
+    max_discharge_current:
+      name: "${bms_name} max discharge current"
+
+sensor:
+  - platform: pipsolar
+    pipsolar_id: inverter0
+    # QPIRI
+    battery_bulk_voltage:
+      name: "${inverter_name} battery_bulk_voltage"
+    battery_float_voltage:
+      name: "${inverter_name} battery_float_voltage"
+    current_max_ac_charging_current:
+      name: "${inverter_name} current_max_ac_charging_current"
+    current_max_charging_current:
+      name: "${inverter_name} current_max_charging_current"
+    battery_redischarge_voltage:
+      name: "${inverter_name} battery_redischarge_voltage"
+
+    # QPIGS
+    grid_voltage:
+      name: "${inverter_name} grid_voltage"
+    grid_frequency:
+      name: "${inverter_name} grid_frequency"
+    ac_output_voltage:
+      name: "${inverter_name} ac_output_voltage"
+    ac_output_frequency:
+      name: "${inverter_name} ac_output_frequency"
+    ac_output_apparent_power:
+      name: "${inverter_name} ac_output_apparent_power"
+    ac_output_active_power:
+      name: "${inverter_name} ac_output_active_power"
+    output_load_percent:
+      name: "${inverter_name} output_load_percent"
+#    bus_voltage:
+#      name: "${inverter_name} bus_voltage"
+    battery_voltage:
+      name: "${inverter_name} battery_voltage"
+    battery_charging_current:
+      name: "${inverter_name} battery_charging_current"
+#    battery_capacity_percent:
+#      name: "${inverter_name} battery_capacity_percent"
+    inverter_heat_sink_temperature:
+      name: "${inverter_name} inverter_heat_sink_temperature"
+    pv_input_current_for_battery:
+      name: "${inverter_name} pv_input_current_for_battery"
+    pv_input_voltage:
+      name: "${inverter_name} pv_input_voltage"
+    battery_voltage_scc:
+      name: "${inverter_name} battery_voltage_scc"
+    battery_discharge_current:
+      name: "${inverter_name} battery_discharge_current"
+    battery_voltage_offset_for_fans_on:
+      name: "${inverter_name} battery_voltage_offset_for_fans_on"
+#    eeprom_version:
+#      name: "${inverter_name} eeprom_version"
+    pv_charging_power:
+      name: "${inverter_name} pv_charging_power"
+  - platform: jk_bms_ble
+    jk_bms_ble_id: bms0
+    min_cell_voltage:
+      name: "${bms_name} min cell voltage"
+    max_cell_voltage:
+      name: "${bms_name} max cell voltage"
+    min_voltage_cell:
+      name: "${bms_name} min voltage cell"
+    max_voltage_cell:
+      name: "${bms_name} max voltage cell"
+    delta_cell_voltage:
+      name: "${bms_name} delta cell voltage"
+    average_cell_voltage:
+      name: "${bms_name} average cell voltage"
+    cell_voltage_1:
+      name: "${bms_name} cell voltage 1"
+    cell_voltage_2:
+      name: "${bms_name} cell voltage 2"
+    cell_voltage_3:
+      name: "${bms_name} cell voltage 3"
+    cell_voltage_4:
+      name: "${bms_name} cell voltage 4"
+    cell_voltage_5:
+      name: "${bms_name} cell voltage 5"
+    cell_voltage_6:
+      name: "${bms_name} cell voltage 6"
+    cell_voltage_7:
+      name: "${bms_name} cell voltage 7"
+    cell_voltage_8:
+      name: "${bms_name} cell voltage 8"
+    cell_voltage_9:
+      name: "${bms_name} cell voltage 9"
+    cell_voltage_10:
+      name: "${bms_name} cell voltage 10"
+    cell_voltage_11:
+      name: "${bms_name} cell voltage 11"
+    cell_voltage_12:
+      name: "${bms_name} cell voltage 12"
+    cell_voltage_13:
+      name: "${bms_name} cell voltage 13"
+    cell_voltage_14:
+      name: "${bms_name} cell voltage 14"
+    cell_voltage_15:
+      name: "${bms_name} cell voltage 15"
+    cell_voltage_16:
+      name: "${bms_name} cell voltage 16"
+    total_voltage:
+      name: "${bms_name} total voltage"
+    current:
+      name: "${bms_name} current"
+    power:
+      name: "${bms_name} power"
+    charging_power:
+      name: "${bms_name} charging power"
+    discharging_power:
+      name: "${bms_name} discharging power"
+    temperature_sensor_1:
+      name: "${bms_name} temperature sensor 1"
+    temperature_sensor_2:
+      name: "${bms_name} temperature sensor 2"
+    power_tube_temperature:
+      name: "${bms_name} power tube temperature"
+    state_of_charge:
+      name: "${bms_name} state of charge"
+    capacity_remaining:
+      name: "${bms_name} capacity remaining"
+    total_battery_capacity_setting:
+      name: "${bms_name} total battery capacity setting"
+    charging_cycles:
+      name: "${bms_name} charging cycles"
+    total_charging_cycle_capacity:
+      name: "${bms_name} total charging cycle capacity"
+    total_runtime:
+      name: "${bms_name} total runtime"
+    balancing_current:
+      name: "${bms_name} balancing current"
+    errors_bitmask:
+      name: "${bms_name} errors bitmask"
+
+switch:
+  - platform: pipsolar
+    pipsolar_id: inverter0
+    output_source_priority_utility:
+      name: "${inverter_name} output_source_priority_utility"
+    output_source_priority_solar:
+      name: "${inverter_name} output_source_priority_solar"
+    output_source_priority_battery:
+      name: "${inverter_name} output_source_priority_battery"
+    input_voltage_range:
+      name: "${inverter_name} input_voltage_range"
+
+  - platform: jk_bms_ble
+    charging:
+      name: "${bms_name} charging"
+    discharging:
+      name: "${bms_name} discharging"
+    balancer:
+      name: "${bms_name} balancer"
+
+  - platform: ble_client
+    ble_client_id: client0
+    name: "${bms_name} enable bluetooth connection"
+
+text_sensor:
+  - platform: jk_bms_ble
+    errors:
+      name: "${bms_name} errors"
+    total_runtime_formatted:
+      name: "${bms_name} total runtime formatted"
+
+  - platform: pipsolar
+    pipsolar_id: inverter0
+    device_mode:
+      name: "${inverter_name} device_mode"
+    last_qpigs:
+      name: "${inverter_name} last_qpigs"
+    last_qpiri:
+      name: "${inverter_name} last_qpiri"
+    last_qmod:
+      name: "${inverter_name} last_qmod"
+    last_qflag:
+      name: "${inverter_name} last_qflag"
+
+output:
+  - platform: pipsolar
+    pipsolar_id: inverter0
+    battery_recharge_voltage:
+      id: inverter0_battery_recharge_voltage_out
+    battery_float_voltage:
+      id: inverter0_battery_float_voltage
+    current_max_ac_charging_current:
+      id: inverter0_current_max_ac_charging_current
+    battery_redischarge_voltage:
+      id: inverter0_battery_redischarge_voltage
